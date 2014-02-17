@@ -1,15 +1,40 @@
 #!/bin/bash
 
 REPO="docker-nginx"
-MOUNT="$PWD/public:/var/www"
-HOST_PORT=8080
-CONTAINER_PORT=80
+
+HOST_MOUNT="$PWD/public"
+CONTAINER_MOUNT="/var/www"
+
+HOST_PORT="8080"
+CONTAINER_PORT="80"
+
+MOUNT=""
+PORT=""
+while [[ -n "$1" ]]; do
+    case $1 in
+        -v ) shift
+            MOUNT="-v $1"
+            ;;
+        -p ) shift
+            PORT="-p $1"
+            ;;
+    esac
+    shift
+done
+
+if [[ -z "$MOUNT" && -n "$HOST_MOUNT" && -n "$CONTAINER_MOUNT" ]]; then
+    MOUNT="-v $HOST_MOUNT:$CONTAINER_MOUNT"
+fi
+
+if [[ -z "$PORT" && -n "$HOST_PORT" && -n "$CONTAINER_PORT" ]]; then
+    PORT="-p $HOST_PORT:$CONTAINER_PORT"
+fi
 
 # Build
 docker build -rm -t $REPO .
 
 # Run
-docker run -p $HOST_PORT:$CONTAINER_PORT -v $MOUNT -i -t $REPO
+docker run $PORT $MOUNT -i -t $REPO
 
 # Remove stopped containers
 CONTAINERS=$(docker ps  -a | grep 'Exit' | awk '{print $1}')
